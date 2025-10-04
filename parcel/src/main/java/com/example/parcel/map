@@ -1,0 +1,14 @@
+fedex-clone/
+  ├─ pom.xml
+  ├─ src/main/java/com/example/fedex
+  │   ├─ FedexApplication.java
+  │   ├─ config/ (Security, JWT, Mail, Async)
+  │   ├─ controller/ (Auth, Shipment, Tracking, Admin, Driver, Payment)
+  │   ├─ dto/
+  │   ├─ entity/
+  │   ├─ repository/
+  │   ├─ service/
+  │   └─ util/
+  └─ src/main/resources/
+      ├─ application.yml
+      └─ db/migration/V1__init.sql
