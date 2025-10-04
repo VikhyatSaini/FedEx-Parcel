@@ -1,4 +1,4 @@
-package com.example.parcel.service;
+package com.example.parcel.dto;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface TruckRepository extends JpaRepository<Truck, Long> {
     Optional<Truck> findFirstByActiveTrueAndHomeNode(DeliveryNode homeNode);
+    Optional<Truck> findByRegNo(String regNo); // <-- Add this line
+
 }

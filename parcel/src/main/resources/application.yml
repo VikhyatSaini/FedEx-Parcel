@@ -26,7 +26,7 @@ mail:
     mail.smtp.starttls.enable: true
 app:
   jwt:
-    secret: change-me-please-very-long
+    secret: ThisIsA_MuchLongerAndMoreSecureSecretKeyForYourFedexProject_DoNotUseThisExactOne!
     expirationMinutes: 120
   routing:
     nearestNodeRadiusMeters: 2000

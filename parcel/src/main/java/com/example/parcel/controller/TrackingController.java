@@ -1,7 +1,7 @@
 package com.example.parcel.controller;
 
 import com.example.parcel.service.TrackingService;
-import com.example.parcel.service.TrackingSummary;
+import com.example.parcel.dto.TrackingSummary; 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

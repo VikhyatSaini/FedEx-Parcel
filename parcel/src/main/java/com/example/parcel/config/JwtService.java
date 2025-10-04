@@ -1,9 +1,9 @@
 package com.example.parcel.config;
 
-
 import com.example.parcel.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value; // <-- Add this import
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,11 +15,16 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    // Secret from application.yml
-    private final String jwtSecret = "change-me-please-very-long"; // >= 32 chars
+    private final Key key;
     private final long expirationMs = 120 * 60 * 1000L; // 120 minutes
 
-    private final Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    // --- This is the new part ---
+    // Use a constructor to inject the value from application.yml
+    public JwtService(@Value("${app.jwt.secret}") String jwtSecret) {
+        // The key is now created securely using the injected secret
+        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    }
+    // --- End of new part ---
 
     // Generate JWT token for a user
     public String generateToken(User user) {
@@ -59,4 +64,3 @@ public class JwtService {
                 .getBody().getSubject();
     }
 }
-
