@@ -34,8 +34,8 @@ public class ShipmentService {
         repo.save(s);
         var plan = planner.plan(s, req.fromNodeCode(), req.toNodeCode());
         planRepo.save(plan);
-        notify.sendPickupEmail(customer.getEmail(),
-                "Pickup ETA: " + plan.getPickupEta() + "\nPickup contact: " + plan.getPickupPersonName());
+        // notify.sendPickupEmail(customer.getEmail(),
+        //         "Pickup ETA: " + plan.getPickupEta() + "\nPickup contact: " + plan.getPickupPersonName());        THIS IS TO BE BROUGHT BACK
         return new CreateOrderResponse(s.getTrackingNumber(), s.getPrice(), plan.getPickupEta());
     }
 

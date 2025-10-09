@@ -19,17 +19,24 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
+    // In AuthServiceImpl.java
+
     @Override
     public JwtResponse registerCustomer(RegisterRequest request) {
+        // Check if a user with this email already exists
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            // If they do, throw a specific, helpful exception
+            throw new IllegalStateException("Error: Email is already in use!");
+        }
+
         User newUser = new User();
         newUser.setEmail(request.getEmail());
         newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        newUser.setFullName(request.getUsername()); // Assuming username is the full name
-        newUser.setRole(Role.CUSTOMER); // Assign a default role
+        newUser.setFullName(request.getUsername());
+        newUser.setRole(Role.CUSTOMER);
 
         userRepository.save(newUser);
 
-        // Generate a real JWT for the new user
         return new JwtResponse(jwtService.generateToken(newUser));
     }
 
