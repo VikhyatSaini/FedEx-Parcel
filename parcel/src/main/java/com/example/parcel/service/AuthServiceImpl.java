@@ -12,31 +12,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor // Automatically handles the constructor injection
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    // In AuthServiceImpl.java
-
     @Override
     public JwtResponse registerCustomer(RegisterRequest request) {
-        // Check if a user with this email already exists
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            // If they do, throw a specific, helpful exception
             throw new IllegalStateException("Error: Email is already in use!");
         }
-
-        User newUser = new User();
-        newUser.setEmail(request.getEmail());
-        newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        newUser.setFullName(request.getUsername());
-        newUser.setRole(Role.CUSTOMER);
-
-        userRepository.save(newUser);
-
+        User newUser = createUser(request, Role.CUSTOMER);
         return new JwtResponse(jwtService.generateToken(newUser));
     }
 
@@ -46,11 +34,37 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            // If password is correct, generate and return a real JWT
             return new JwtResponse(jwtService.generateToken(user));
         } else {
-            // Handle incorrect password
             throw new RuntimeException("Invalid password");
         }
+    }
+
+    @Override
+    public JwtResponse registerAdmin(RegisterRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalStateException("Error: Email is already in use!");
+        }
+        User newUser = createUser(request, Role.ADMIN);
+        return new JwtResponse(jwtService.generateToken(newUser));
+    }
+
+    @Override
+    public JwtResponse registerDriver(RegisterRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalStateException("Error: Email is already in use!");
+        }
+        User newUser = createUser(request, Role.DRIVER);
+        return new JwtResponse(jwtService.generateToken(newUser));
+    }
+
+    // FIXED HELPER METHOD
+    private User createUser(RegisterRequest request, Role role) {
+        User newUser = new User();
+        newUser.setEmail(request.getEmail());
+        newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        newUser.setFullName(request.getFullName());
+        newUser.setRole(role);
+        return userRepository.save(newUser);
     }
 }

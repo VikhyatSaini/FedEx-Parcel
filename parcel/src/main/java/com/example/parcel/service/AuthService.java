@@ -7,4 +7,6 @@ import com.example.parcel.dto.RegisterRequest;
 public interface AuthService {
     JwtResponse registerCustomer(RegisterRequest request);
     JwtResponse login(LoginRequest request);
+    JwtResponse registerAdmin(RegisterRequest request);
+    JwtResponse registerDriver(RegisterRequest request);
 }

@@ -27,8 +27,11 @@ public class AuthFacade {
 
     // This is the secure implementation you must use
     public User loadUserByToken(String token) {
-        String email = jwtService.extractEmail(token);
-        return userRepo.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found for email: " + email));
+    if (token == null || token.trim().isEmpty()) {
+        throw new RuntimeException("No JWT token provided");
     }
+    String email = jwtService.extractEmail(token);
+    return userRepo.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+}
 }

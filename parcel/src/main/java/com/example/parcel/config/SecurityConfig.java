@@ -13,6 +13,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import static org.springframework.security.config.Customizer.withDefaults;
+
 
 @Configuration
 @EnableMethodSecurity
@@ -24,19 +26,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Disable CSRF protection for stateless APIs
             .csrf(AbstractHttpConfigurer::disable)
-
-            // 2. Define the authorization rules
-            .authorizeHttpRequests(authorize -> authorize
-    .anyRequest().permitAll() // Temporarily allow all requests
-)
-
-            // 3. Set the session management to stateless
+            // Enable CORS using the bean you defined
+            .cors(withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-            // 4. Add your custom JWT filter before the standard username/password filter
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            // Define your authorization rules
+            .authorizeHttpRequests(authorize -> authorize
+                // These endpoints are public
+                .requestMatchers(
+                    "/api/auth/**",           // This should cover ALL auth endpoints
+                    "/v3/api-docs/**", 
+                    "/swagger-ui/**", 
+                    "/api/track/**"
+                ).permitAll()
+                // All other requests must be authenticated
+                .anyRequest().authenticated()
+            );
 
         return http.build();
     }
@@ -45,6 +51,7 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
@@ -57,5 +64,4 @@ public class SecurityConfig {
             }
         };
     }
-
 }
