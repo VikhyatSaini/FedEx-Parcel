@@ -11,5 +11,6 @@ public record ShipmentDto(
         String deliveryAddress,
         BigDecimal price,
         LocalDateTime pickupEta,
-        String pickupPersonName
+        String pickupPersonName,
+        String paymentStatus
 ) {}

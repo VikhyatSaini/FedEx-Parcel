@@ -7,6 +7,8 @@ import com.example.parcel.dto.ShipmentDto;
 import com.example.parcel.entity.DeliveryPlan;
 import com.example.parcel.entity.Shipment;
 import com.example.parcel.repository.ShipmentRepository;
+import com.example.parcel.repository.PaymentRepository; // Import this
+import com.example.parcel.entity.Payment;
 import com.example.parcel.service.ShipmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/shipments")
@@ -24,54 +28,51 @@ public class ShipmentController {
     private final ShipmentService shipments;
     private final AuthFacade auth;
     private final ShipmentRepository shipmentRepository;
+    private final PaymentRepository paymentRepository;
+
+    // --- THIS IS THE REORDERED PART ---
+
+    // The MORE SPECIFIC path comes FIRST
+    @GetMapping("/my-shipments")
+    public List<ShipmentDto> getMyShipments() {
+        Long currentUserId = auth.currentUser().getId();
+        List<Shipment> myShipments = shipmentRepository.findByCustomerId(currentUserId);
+        return myShipments.stream().map(this::mapShipmentToDto).collect(Collectors.toList());
+    }
+
+    // The MORE GENERAL path with a variable comes SECOND
+    @GetMapping("/{tracking}")
+    public ShipmentDto get(@PathVariable String tracking) {
+        Shipment shipment = shipmentRepository.findByTrackingNumber(tracking);
+        if (shipment == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Shipment not found with tracking number: " + tracking);
+        }
+        // ... (rest of the method is the same)
+        return mapShipmentToDto(shipment);
+    }
+
+    // --- END OF REORDERED PART ---
+
 
     @PostMapping
     public CreateOrderResponse create(@Valid @RequestBody CreateOrderRequest req){
         return shipments.createOrder(auth.currentUser(), req);
     }
 
-    @GetMapping("/{tracking}")
-    public ShipmentDto get(@PathVariable String tracking){
-        System.out.println("--- Inside GET /api/shipments/{tracking} ---");
+    // --- HELPER METHODS ---
 
-        // 1. Find the shipment
-        Shipment shipment = shipmentRepository.findByTrackingNumber(tracking);
-        if (shipment == null) {
-            System.out.println("ERROR: Shipment not found with tracking number: " + tracking);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Shipment not found");
-        }
-        System.out.println("Step 1: Shipment found successfully.");
-
-        // 2. Security Check
-        if (shipment.getCustomer() == null) {
-            System.out.println("FATAL ERROR: The customer for this shipment is null!");
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Shipment data is corrupted.");
-        }
-        if (!shipment.getCustomer().getId().equals(auth.currentUser().getId())) {
-            System.out.println("ERROR: Security check failed. User does not own this shipment.");
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to view this shipment");
-        }
-        System.out.println("Step 2: Security check passed.");
-
-        // 3. Get the Delivery Plan (and check if it's null)
+    private ShipmentDto mapShipmentToDto(Shipment shipment) {
         DeliveryPlan plan = shipment.getPlan();
-        if (plan == null) {
-            System.out.println("FATAL ERROR: The DeliveryPlan for this shipment is null!");
-            // Even if the plan is null, we should not crash. We'll return what we have.
-        } else {
-            System.out.println("Step 3: DeliveryPlan found successfully.");
-        }
-
-        // 4. Safely map the data
-        System.out.println("Step 4: Mapping data to DTO...");
         LocalDateTime pickupEta = null;
         String pickupPersonName = null;
         if (plan != null && plan.getPickupEta() != null) {
             pickupEta = LocalDateTime.ofInstant(plan.getPickupEta(), ZoneId.systemDefault());
             pickupPersonName = plan.getPickupPersonName();
         }
-
-        ShipmentDto dto = new ShipmentDto(
+        String status = paymentRepository.findFirstByShipmentIdOrderByCreatedAtDesc(shipment.getId())
+                .map(payment -> payment.getStatus().name()) // Get the status name if payment exists
+                .orElse("NOT_INITIATED");
+        return new ShipmentDto(
                 shipment.getTrackingNumber(),
                 shipment.getItemDescription(),
                 shipment.getWeightKg(),
@@ -79,10 +80,9 @@ public class ShipmentController {
                 formatAddress(shipment.getDeliveryAddress()),
                 shipment.getPrice(),
                 pickupEta,
-                pickupPersonName
+                pickupPersonName,
+                status
         );
-        System.out.println("Step 5: DTO created successfully. Returning response.");
-        return dto;
     }
 
     private String formatAddress(com.example.parcel.entity.Address address) {
